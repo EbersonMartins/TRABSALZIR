@@ -1,40 +1,52 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var app = express();
+var path = require('path');
 
+// Middleware para analisar o corpo da requisição
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-app.get('/', function(req, res) {
-  res.send('Oi, mundo :-)');
-});
+var resultadoSoma = null;
 
+// Função para realizar a soma
 function soma(a, b) {
   return a + b;
 }
 
-app.post('/soma', function (req, res) {
-  var body = req.body;
-  var resultado = soma(body.a, body.b);
+// Rota GET para exibir o resultado da soma (se houver)
+app.get('/', function(req, res) {
+  var html = `
+    <h1>Calculadora de Soma</h1>
+    <p>Para somar números, faça uma requisição POST para <code>/soma</code> com os parâmetros <code>a</code> e <code>b</code>.</p>
+  `;
 
-  res.send(`O resultado da soma de ${body.a} e ${body.b} é ${resultado}`);
-});
-app.get('/soma', function(req, res) {
-  // Obtém os parâmetros de consulta da URL
-  var a = parseFloat(req.query.a);
-  var b = parseFloat(req.query.b);
-
-  // Verifica se ambos os parâmetros foram fornecidos
-  if (!isNaN(a) && !isNaN(b)) {
-    var resultado = soma(a, b);
-    res.send(`O resultado da soma de ${a} e ${b} é ${resultado}`);
+  if (resultadoSoma !== null) {
+    html += `<p>O resultado da última soma é: ${resultadoSoma}</p>`;
   } else {
-    res.send('Por favor, forneça os parâmetros "a" e "b" na URL como ?a=numero1&b=numero2');
+    html += `<p>Ainda não foi realizada nenhuma soma.</p>`;
   }
+
+  res.send(html);
+});
+
+// Rota POST para realizar a soma
+app.post('/soma', function (req, res) {
+  var a = parseFloat(req.body.a);
+  var b = parseFloat(req.body.b);
+
+  if (isNaN(a) || isNaN(b)) {
+    res.status(400).send('Parâmetros inválidos. Certifique-se de passar números para a e b.');
+    return;
+  }
+
+  resultadoSoma = soma(a, b);
+  res.send(`O resultado da soma de ${a} e ${b} é ${resultadoSoma}`);
 });
 
 var port = 3001;
 
-// iniciando o processo do servidor
+// Iniciando o processo do servidor
 app.listen(port, function() {
   console.log(`App de Exemplo escutando na porta http://localhost:${port}/`);
 });
